@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/qgis2web.css"><link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>Conflict In Indonesia 1989-2021</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/leaflet-svg-shape-markers.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="data/conflict20112021conflict_data_idncsv_1.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+            highlightLayer.openPopup();
+        }
+        var map = L.map('map', {
+            zoomControl:true, maxZoom:28, minZoom:1
+        }).fitBounds([[-19.131122304579556,92.33491443600761],[17.522881982198925,143.9030345682137]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        document.querySelector(".leaflet-popup-pane").addEventListener("load", function(event) {
+          var tagName = event.target.tagName,
+            popup = map._popup;
+          // Also check if flag is already set.
+          if (tagName === "IMG" && popup && !popup._updated) {
+            popup._updated = true; // Set flag to prevent looping.
+            popup.update();
+          }
+        }, true);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0]
+        .innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0]
+        .className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_OSMStandard_0');
+        map.getPane('pane_OSMStandard_0').style.zIndex = 400;
+        var layer_OSMStandard_0 = L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            pane: 'pane_OSMStandard_0',
+            opacity: 1.0,
+            attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors, CC-BY-SA</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_OSMStandard_0;
+        map.addLayer(layer_OSMStandard_0);
+        function pop_conflict20112021conflict_data_idncsv_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Year of Conflict</th>\
+                        <td>' + (feature.properties['year'] !== null ? autolinker.link(feature.properties['year'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Status</th>\
+                        <td>' + (feature.properties['code_status'] !== null ? autolinker.link(feature.properties['code_status'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Name of Conflict</th>\
+                        <td>' + (feature.properties['conflict_name'] !== null ? autolinker.link(feature.properties['conflict_name'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Actor 1</th>\
+                        <td>' + (feature.properties['side_a'] !== null ? autolinker.link(feature.properties['side_a'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Actor 2</th>\
+                        <td>' + (feature.properties['side_b'] !== null ? autolinker.link(feature.properties['side_b'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Information Source</th>\
+                        <td>' + (feature.properties['source_article'] !== null ? autolinker.link(feature.properties['source_article'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Headline</th>\
+                        <td>' + (feature.properties['source_headline'] !== null ? autolinker.link(feature.properties['source_headline'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Informant</th>\
+                        <td>' + (feature.properties['source_original'] !== null ? autolinker.link(feature.properties['source_original'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Location</th>\
+                        <td>' + (feature.properties['where_description'] !== null ? autolinker.link(feature.properties['where_description'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Province</th>\
+                        <td>' + (feature.properties['adm_1'] !== null ? autolinker.link(feature.properties['adm_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Y Coordinate</th>\
+                        <td>' + (feature.properties['latitude'] !== null ? autolinker.link(feature.properties['latitude'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">X Coordinate</th>\
+                        <td>' + (feature.properties['longitude'] !== null ? autolinker.link(feature.properties['longitude'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Start Date</th>\
+                        <td>' + (feature.properties['date_start'] !== null ? autolinker.link(feature.properties['date_start'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">End Date</th>\
+                        <td>' + (feature.properties['date_end'] !== null ? autolinker.link(feature.properties['date_end'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Deaths</th>\
+                        <td>' + (feature.properties['best'] !== null ? autolinker.link(feature.properties['best'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+            var popup = layer.getPopup();
+            var content = popup.getContent();
+            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
+            popup.setContent(updatedContent);
+        }
+
+        function style_conflict20112021conflict_data_idncsv_1_0(feature) {
+            switch(String(feature.properties['conflict_name'])) {
+                case 'Christians (Indonesia) - Muslims (Indonesia)':
+                    return {
+                pane: 'pane_conflict20112021conflict_data_idncsv_1',
+                shape: 'square',
+                radius: 4.8,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(88,218,166,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Dayak - Madurese':
+                    return {
+                pane: 'pane_conflict20112021conflict_data_idncsv_1',
+                shape: 'square',
+                radius: 4.8,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(121,162,224,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Dayak, Malay (Indonesia) - Madurese':
+                    return {
+                pane: 'pane_conflict20112021conflict_data_idncsv_1',
+                shape: 'square',
+                radius: 4.8,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(238,87,150,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'GAM - Civilians':
+                    return {
+                pane: 'pane_conflict20112021conflict_data_idncsv_1',
+                shape: 'square',
+                radius: 4.8,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(226,158,55,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Government of Indonesia - Civilians':
+                    return {
+                pane: 'pane_conflict20112021conflict_data_idncsv_1',
+                shape: 'square',
+                radius: 4.8,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(96,191,202,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Indonesia: Aceh':
+                    return {
+                pane: 'pane_conflict20112021conflict_data_idncsv_1',
+                shape: 'square',
+                radius: 4.8,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(194,212,30,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Indonesia: East Timor':
+                    return {
+                pane: 'pane_conflict20112021conflict_data_idncsv_1',
+                shape: 'square',
+                radius: 4.8,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(63,48,201,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Indonesia: West Java':
+                    return {
+                pane: 'pane_conflict20112021conflict_data_idncsv_1',
+                shape: 'square',
+                radius: 4.8,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(150,20,237,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Indonesia: West Papua':
+                    return {
+                pane: 'pane_conflict20112021conflict_data_idncsv_1',
+                shape: 'square',
+                radius: 4.8,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(224,133,123,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Jemaah Islamiya - Civilians':
+                    return {
+                pane: 'pane_conflict20112021conflict_data_idncsv_1',
+                shape: 'square',
+                radius: 4.8,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(125,203,73,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Laskar Jihad - Civilians':
+                    return {
+                pane: 'pane_conflict20112021conflict_data_idncsv_1',
+                shape: 'square',
+                radius: 4.8,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(238,77,225,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_conflict20112021conflict_data_idncsv_1',
+                shape: 'square',
+                radius: 4.8,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(28,214,46,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_conflict20112021conflict_data_idncsv_1');
+        map.getPane('pane_conflict20112021conflict_data_idncsv_1').style.zIndex = 401;
+        map.getPane('pane_conflict20112021conflict_data_idncsv_1').style['mix-blend-mode'] = 'normal';
+        var layer_conflict20112021conflict_data_idncsv_1 = new L.geoJson(json_conflict20112021conflict_data_idncsv_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_conflict20112021conflict_data_idncsv_1',
+            layerName: 'layer_conflict20112021conflict_data_idncsv_1',
+            pane: 'pane_conflict20112021conflict_data_idncsv_1',
+            onEachFeature: pop_conflict20112021conflict_data_idncsv_1,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.shapeMarker(latlng, style_conflict20112021conflict_data_idncsv_1_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_conflict20112021conflict_data_idncsv_1);
+        map.addLayer(layer_conflict20112021conflict_data_idncsv_1);
+        var baseMaps = {};
+        L.control.layers(baseMaps,{'conflict 2011 - 2021 - conflict_data_idn.csv<br /><table><tr><td style="text-align: center;"><img src="legend/conflict20112021conflict_data_idncsv_1_ChristiansIndonesiaMuslimsIndonesia0.png" /></td><td>Christians (Indonesia) - Muslims (Indonesia)</td></tr><tr><td style="text-align: center;"><img src="legend/conflict20112021conflict_data_idncsv_1_DayakMadurese1.png" /></td><td>Dayak - Madurese</td></tr><tr><td style="text-align: center;"><img src="legend/conflict20112021conflict_data_idncsv_1_DayakMalayIndonesiaMadurese2.png" /></td><td>Dayak, Malay (Indonesia) - Madurese</td></tr><tr><td style="text-align: center;"><img src="legend/conflict20112021conflict_data_idncsv_1_GAMCivilians3.png" /></td><td>GAM - Civilians</td></tr><tr><td style="text-align: center;"><img src="legend/conflict20112021conflict_data_idncsv_1_GovernmentofIndonesiaCivilians4.png" /></td><td>Government of Indonesia - Civilians</td></tr><tr><td style="text-align: center;"><img src="legend/conflict20112021conflict_data_idncsv_1_IndonesiaAceh5.png" /></td><td>Indonesia: Aceh</td></tr><tr><td style="text-align: center;"><img src="legend/conflict20112021conflict_data_idncsv_1_IndonesiaEastTimor6.png" /></td><td>Indonesia: East Timor</td></tr><tr><td style="text-align: center;"><img src="legend/conflict20112021conflict_data_idncsv_1_IndonesiaWestJava7.png" /></td><td>Indonesia: West Java</td></tr><tr><td style="text-align: center;"><img src="legend/conflict20112021conflict_data_idncsv_1_IndonesiaWestPapua8.png" /></td><td>Indonesia: West Papua</td></tr><tr><td style="text-align: center;"><img src="legend/conflict20112021conflict_data_idncsv_1_JemaahIslamiyaCivilians9.png" /></td><td>Jemaah Islamiya - Civilians</td></tr><tr><td style="text-align: center;"><img src="legend/conflict20112021conflict_data_idncsv_1_LaskarJihadCivilians10.png" /></td><td>Laskar Jihad - Civilians</td></tr><tr><td style="text-align: center;"><img src="legend/conflict20112021conflict_data_idncsv_1_11.png" /></td><td></td></tr></table>': layer_conflict20112021conflict_data_idncsv_1,"OSM Standard": layer_OSMStandard_0,}).addTo(map);
+        setBounds();
+        </script>
+    </body>
+</html>
